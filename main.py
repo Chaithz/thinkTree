@@ -22,3 +22,6 @@ async def parse_pdf(file: UploadFile = File(...)):
 
     except Exception as e:
         return JSONResponse(content={"error":f"An error occured: {str(e)}"}, status_code=500)
+
+
+# vector db integration
