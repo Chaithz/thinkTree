@@ -4,6 +4,9 @@ import fitz
 
 app=FastAPI()
 
+def chunk_text(text: str, chunk_size: int = 1000) -> list:
+    return [text[i:i+chunk_size] for i in range(0, len(text), chunk_size)]
+
 @app.post("/parse-pdf/")
 async def parse_pdf(file: UploadFile = File(...)):
     #checking if the uploaded file is a pdf
@@ -18,10 +21,11 @@ async def parse_pdf(file: UploadFile = File(...)):
                 page = doc.load_page(page_num)      #loads each page
                 pdf_text += page.get_text("text")       #extracts text
 
-        return {"filename": file.filename, "content":pdf_text}
+        chunks = chunk_text(pdf_text, 1000)
+
+        return {"filename": file.filename, "total_chunks":len(chunks), "chunks":chunks}
 
     except Exception as e:
         return JSONResponse(content={"error":f"An error occured: {str(e)}"}, status_code=500)
 
 
-# vector db integration
