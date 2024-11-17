@@ -33,7 +33,7 @@ async def parse_pdf(file: UploadFile = File(...)):
                 pdf_text += page.get_text("text")  # Extracts text
 
         # Chunk the text and store in the vector database
-        chunks = chunk_text(pdf_text, 100)
+        chunks = chunk_text(pdf_text, 500)
         for i, chunk in enumerate(chunks):
             collection.upsert(
                 documents=[chunk],
@@ -56,8 +56,24 @@ async def query_database(query_text: str, model_name: str = "llama2"):
             n_results=3  # Return top 3 results
         )
 
+        prompt = f"""You are an efficient knowledge distiller that returns only a json formmatted text with key values pairs of the below mentioned context
+        The key value pairs should only include the key words and value should be a sentence explaining the part.
+        The topic should be related to the below mentioned query text
+        If the topic is unrelated, return null
+        Context:{results}
+        Question:{query_text}"""
 
-        return {"query": query_text, "result" : results}
+        ollama_response = ollama.chat(
+            model= model_name,
+            messages=[
+                {
+                    'role':'user',
+                    'content':prompt,
+                }]) 
+
+        answer = ollama_response['message']['content']       
+
+        return {"query": query_text, "result" : results,"answer" : answer}
 
     except Exception as e:
         return JSONResponse(content={"error": f"An error occurred: {str(e)}"}, status_code=500)
